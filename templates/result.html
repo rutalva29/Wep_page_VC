@@ -118,7 +118,7 @@
 <body>
     
     <div class="result-container">
-        <h1>Resultado del Análisis</h1>
+        <h1>Analysis Result</h1>
         
         {% if fire_detected %}
             <div class="result-box fire">
@@ -135,8 +135,8 @@
         <div class="image-wrapper">
              <img src="{{ url_for('uploaded_file', filename=image_name) }}" alt="Imagen Analizada">
         </div>
-        
-        <a href="/" class="back-btn">Analizar Otra Imagen</a>
+
+        <a href="/" class="back-btn">Analyze Another Image</a>
     </div>
 
 </body>
