@@ -1,14 +1,6 @@
 import os
 import cv2
-from flask import (
-    Flask,
-    request,
-    render_template,
-    redirect,
-    url_for,
-    send_from_directory,
-)
-from werkzeug.utils import secure_filename
+import streamlit as st
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.applications import MobileNetV2
@@ -17,9 +9,7 @@ from tensorflow.keras.preprocessing import image
 
 UPLOAD_FOLDER = "static/uploads/"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
-app = Flask(__name__)
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+
 
 
 def create_fire_model():
@@ -379,46 +369,47 @@ def process_image(filepath, model, threshold=0.6):
     except Exception as e:
         print(f"Error processing image {filepath}: {e}")
         return filepath, f"Error: {e}", False
-       
-@app.route("/", methods=["GET", "POST"])
-def upload_file():
-    if request.method == "POST":
-        if "file" not in request.files:
-            return redirect(request.url)
-        file = request.files["file"]
-        if file.filename == "":
-            return redirect(request.url)
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
-            if not os.path.exists(app.config["UPLOAD_FOLDER"]):
-                os.makedirs(app.config["UPLOAD_FOLDER"])
-            file.save(filepath)
-            processed_image_path, result_text, fire_detected = process_image(
-                filepath, fire_model
-            )
-            processed_filename = os.path.basename(processed_image_path)
-            return render_template(
-                "result.html",
-                image_name=processed_filename,
-                result_text=result_text,
-                fire_detected=fire_detected,
-            )
-    return render_template("index.html")
 
 
-@app.route("/uploads/<filename>")
-def uploaded_file(filename):
-    return send_from_directory(app.config["UPLOAD_FOLDER"], filename)
+# Configuración de Streamlit
+st.set_page_config(page_title="Detector de Incendios", layout="centered")
+st.title("🔥 Sistema de Detección de Fuego")
+st.write("Sube una imagen para analizarla con IA y el algoritmo Buza-Akagic.")
 
+# Carga del modelo optimizada para Streamlit
+@st.cache_resource
+def get_model():
+    return load_trained_model()
 
-fire_model = load_trained_model()
+fire_model = get_model()
 
-if __name__ == "__main__":
-    if fire_model is None:
-        print("Could not load model. Exiting.")
-        exit()
+# Interfaz de carga
+uploaded_file = st.file_uploader("Selecciona una imagen...", type=["jpg", "png", "jpeg"])
 
+if uploaded_file is not None:
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
-    app.run(debug=False, port=5000, host="0.0.0.0")
+    
+    # Guardar el archivo subido
+    filepath = os.path.join(UPLOAD_FOLDER, uploaded_file.name)
+    with open(filepath, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+
+    # Procesamiento con tu función original
+    with st.spinner('Analizando imagen...'):
+        processed_path, result_text, fire_detected = process_image(filepath, fire_model)
+
+    # Mostrar resultados en pantalla
+    st.divider()
+    st.header("Resultado del Análisis")
+    
+    if fire_detected:
+        st.error(result_text)
+        col1, col2 = st.columns(2)
+        with col1:
+            st.image(filepath, caption="Imagen Original", use_container_width=True)
+        with col2:
+            st.image(processed_path, caption="Detección Buza-Akagic", use_container_width=True)
+    else:
+        st.success(result_text)
+        st.image(filepath, caption="Imagen procesada", use_container_width=True)
