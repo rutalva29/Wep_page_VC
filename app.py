@@ -150,7 +150,4 @@ def main():
 
 if __name__ == "__main__":
     main()
-            st.image(processed_path, caption="Detección Buza-Akagic", use_container_width=True)
-    else:
-        st.success(result_text)
-        st.image(filepath, caption="Imagen procesada", use_container_width=True)
+           
