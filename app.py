@@ -73,7 +73,7 @@ def algorithm_3_get_thresholds(rgb_stripe):
     tau1 = np.median(eta) if len(eta) > 0 else 0.0
     eta2 = np.where((hist_b > hist_g) & (hist_b > hist_r))[0]
     tau2_raw = float(eta2[-1]) if len(eta2) > 0 else 0.0
-    q_tau2 = 5.0 # Simplificación para estabilidad
+    q_tau2 = 5.0 
     return tau1, q_tau2
 
 def algorithm_2_stripes(rgb_img, orientation='horizontal'):
@@ -110,9 +110,9 @@ def buza_akagic_segmentation(rgb_img):
             if np.sum(cv2.bitwise_and(comp, seed_mask)) > 0:
                 final_mask = cv2.bitwise_or(final_mask, comp)
     
-    vis = cv2.cvtColor(rgb_img, cv2.COLOR_RGB2BGR)
+    vis = rgb_img.copy()
     contours, _ = cv2.findContours(final_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    cv2.drawContours(vis, contours, -1, (0, 255, 255), 2)
+    cv2.drawContours(vis, contours, -1, (255, 255, 0), 2)
     return vis
 
 # --- LÓGICA DE PROCESAMIENTO ---
@@ -142,12 +142,11 @@ def main():
                 res_img = buza_akagic_segmentation(img_rgb)
             
             col1, col2 = st.columns(2)
-            col1.image(img_rgb, caption="Imagen Original")
-            col2.image(cv2.cvtColor(res_img, cv2.COLOR_BGR2RGB), caption="Segmentación Buza-Akagic")
+            col1.image(img_rgb, caption="Imagen Original", use_container_width=True)
+            col2.image(res_img, caption="Segmentación Buza-Akagic", use_container_width=True)
         else:
             st.success(f"Todo despejado: No se detecta fuego ({1-confidence:.2%})")
-            st.image(img_rgb, width=600)
+            st.image(img_rgb, caption="Imagen analizada", width=600)
 
 if __name__ == "__main__":
     main()
-           
